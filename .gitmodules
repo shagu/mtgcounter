@@ -1,0 +1,3 @@
+[submodule "framestack"]
+	path = framestack
+	url = https://github.com/shagu/framestack
