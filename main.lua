@@ -52,7 +52,6 @@ local function newcounter(name, rotate)
   plus.text = "[+]"
   plus.color = { .5, 1, .5, 1}
   plus:on("click", function(self, event, x, y, button)
-    if button ~= "touch" then return end
     counter.life.text = counter.life.text + 1
     counter.color[2] = .5
   end)
@@ -61,7 +60,6 @@ local function newcounter(name, rotate)
   minus.text = "[-]"
   minus.color = { 1, .5, .5, 1}
   minus:on("click", function(self, event, x, y, button)
-    if button ~= "touch" then return end
     counter.life.text = counter.life.text - 1
     counter.color[1] = .5
   end)
