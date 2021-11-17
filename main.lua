@@ -37,16 +37,17 @@ local function newcounter(name, rotate)
   counter.life.font = love.graphics.newFont(font, 72)
   counter.life.text = "20"
   counter.life.rotate = rotate and math.pi or 0
+  counter.life.offset = { .1, .1, .1, .1 }
 
   counter.increase = counter:new(5, name.."ButtonIncrease", "font", "resize")
   counter.increase.font = love.graphics.newFont(font, 32)
   counter.increase.mouse = true
-  counter.increase.offset = { rotate and .1 or 0, .1, rotate and 0 or .1, .6}
+  counter.increase.offset = { .1, .1, .1, .6}
 
   counter.decrease = counter:new(5, name.."ButtonDecrease", "font", "resize")
   counter.decrease.font = love.graphics.newFont(font, 32)
   counter.decrease.mouse = true
-  counter.decrease.offset = { rotate and .1 or 0, .6, rotate and 0 or .1, .1}
+  counter.decrease.offset = { .1, .6, .1, .1}
 
   local plus = rotate and counter.decrease or counter.increase
   plus.text = "[+]"
