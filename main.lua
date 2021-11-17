@@ -80,17 +80,18 @@ local bottom = newcounter("player2")
 bottom.offset = { .55, 0, 0, 0 }
 
 -- create middle panel
-local dice = framestack:new(1, "Dice", "color", "resize")
-dice.color = { .2, .2, .2, 1 }
-dice.offset = { .45, 0, .45, 0 }
+local panel = framestack:new(1, "panel", "color", "resize")
+panel.color = { .2, .2, .2, 1 }
+panel.offset = { .45, 0, .45, 0 }
 
 -- add reset button
-dice.reset = dice:new(5, "Reset", "font", "resize")
-dice.reset.mouse = true
-dice.reset.font = love.graphics.newFont(font, 32)
-dice.reset.text = "[=]"
-dice.reset.color = { 1, 1, 1, .5 }
-dice.reset:on("click", function()
+panel.reset = panel:new(5, "PanelResetButton", "font", "resize")
+panel.reset.mouse = true
+panel.reset.font = love.graphics.newFont(font, 32)
+panel.reset.text = "[=]"
+panel.reset.color = { 1, 1, 1, .5 }
+panel.reset.offset = { 0, .4, 0, .4 }
+panel.reset:on("click", function()
   -- reset health
   top.life.text = 20
   bottom.life.text = 20
