@@ -6,6 +6,7 @@ require "framestack/mouse"
 require "framestack/color"
 require "framestack/font"
 require "framestack/resize"
+require "framestack/image"
 
 -- set the default font to joti-one:
 -- https://fonts.google.com/specimen/Joti+One
@@ -85,11 +86,8 @@ panel.color = { .2, .2, .2, 1 }
 panel.offset = { .45, 0, .45, 0 }
 
 -- add reset button
-panel.reset = panel:new(5, "PanelResetButton", "font", "resize")
+panel.reset = panel:new(5, "PanelResetButton", "resize")
 panel.reset.mouse = true
-panel.reset.font = love.graphics.newFont(font, 32)
-panel.reset.text = "[=]"
-panel.reset.color = { 1, 1, 1, .5 }
 panel.reset.offset = { 0, .4, 0, .4 }
 panel.reset:on("click", function()
   -- reset health
@@ -100,3 +98,7 @@ panel.reset:on("click", function()
   top.color = { 1, 1, 1, 0 }
   bottom.color = { 1, 1, 1, 0 }
 end)
+
+panel.reset.icon = panel.reset:new(6, "PanelResetButtonIcon", "image", "resize")
+panel.reset.icon.image = "res/reset.png"
+panel.reset.icon.offset = { .25, .25, .25, .25 }
