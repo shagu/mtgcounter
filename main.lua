@@ -140,8 +140,12 @@ popup.roll:on("click", function()
   popup.roll.color = { 1, 1, 1, .5 }
 end)
 
-popup.roll:on("draw", function()
+popup.roll:on("draw", function(self)
   fadecolor(popup.roll, .1, .1, .1, 1, .1)
+
+  -- throttle repaint to a maximum of once each 0.025 seconds
+  if ( self.tick or .025) > love.timer.getTime() then return else self.tick = love.timer.getTime() + .025 end
+
   if not popup.flipto then return end
 
   local running = love.timer.getTime() < popup.flipto
