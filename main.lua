@@ -12,6 +12,14 @@ require "framestack/image"
 -- https://fonts.google.com/specimen/Joti+One
 local font = "res/JotiOne.ttf"
 
+-- dice-roll number to word associations
+local num2word = {
+  "One", "Two", "Three", "Four", "Five",
+  "Six", "Seven", "Eight", "Nine", "Ten",
+  "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+}
+
 -- register framestack to love update
 function love.load()
   framestack:init()
@@ -85,6 +93,92 @@ local panel = framestack:new(1, "panel", "color", "resize")
 panel.color = { .2, .2, .2, 1 }
 panel.offset = { .45, 0, .45, 0 }
 
+local popup = framestack:new(10, "PopUp", "color", "resize")
+popup.show = nil
+popup.color = { 0, 0, 0, .9 }
+popup.mouse = true
+popup.display = function(self, mode)
+  popup.mode = mode
+  popup.flipto = nil
+
+  if mode == "coin" then
+    popup.roll.icon.image = "res/coin.png"
+    popup.roll.icontext.text = ""
+    popup.roll.text.text = "Flip!"
+  else
+    popup.roll.icon.image = "res/w20.png"
+    popup.roll.icontext.text = "20"
+    popup.roll.text.text = "Roll!"
+  end
+
+  popup.roll.icon.rotate = 0
+  popup.show = true
+end
+
+popup:on("click", function()
+  popup.show = nil
+end)
+
+popup.roll = popup:new(11, "PopUpRoll", "color", "resize")
+popup.roll.color = { .1, .1, .1, 1 }
+popup.roll.offset = { .25, .1, .25, .1 }
+popup.roll.mouse = true
+
+popup.roll.text = popup.roll:new(12, nil, "font", "resize")
+popup.roll.text.offset = { .5, .3, .1, .3 }
+popup.roll.text.font = love.graphics.newFont(font, 48)
+
+popup.roll.icon = popup.roll:new(12, "PanelDiceButtonIcon", "image", "resize")
+popup.roll.icon.offset = { .2, .3, .4, .3 }
+
+popup.roll.icontext = popup.roll:new(12, nil, "font", "resize")
+popup.roll.icontext.offset = { .2, .3, .4, .3 }
+popup.roll.icontext.font = love.graphics.newFont(font, 48)
+
+popup.roll:on("click", function()
+  popup.flipto = love.timer.getTime() + .5 + math.random()
+  popup.roll.color = { 1, 1, 1, .5 }
+end)
+
+popup.roll:on("draw", function()
+  fadecolor(popup.roll, .1, .1, .1, 1, .1)
+  if not popup.flipto then return end
+
+  local running = love.timer.getTime() < popup.flipto
+
+  if popup.mode == "coin" then
+    if running then
+      popup.roll.state = not popup.roll.state
+      popup.roll.text.text = "..."
+      popup.roll.icon.image = popup.roll.state and "res/coin.png" or "res/coin_head.png"
+    else
+      popup.roll.icon.image = popup.roll.state and "res/coin.png" or "res/coin_head.png"
+      popup.roll.text.text = popup.roll.state and "Tail" or "Head"
+    end
+  else
+    if running then
+      popup.roll.icon.rotate = math.random(20)
+      popup.roll.icontext.text = math.random(20)
+      popup.roll.text.text = "..."
+    else
+      popup.roll.icon.rotate = 0
+      popup.roll.text.text = num2word[popup.roll.icontext.text]
+    end
+  end
+end)
+
+-- add flip coin button
+panel.coin = panel:new(5, "PanelCoinButton", "resize")
+panel.coin.mouse = true
+panel.coin.offset = { 0, .6, 0, .1 }
+panel.coin:on("click", function()
+  popup:display("coin")
+end)
+
+panel.coin.icon = panel.coin:new(6, "PanelCoinButtonIcon", "image", "resize")
+panel.coin.icon.image = "res/coin.png"
+panel.coin.icon.offset = { .25, .25, .25, .25 }
+
 -- add reset button
 panel.reset = panel:new(5, "PanelResetButton", "resize")
 panel.reset.mouse = true
@@ -102,3 +196,15 @@ end)
 panel.reset.icon = panel.reset:new(6, "PanelResetButtonIcon", "image", "resize")
 panel.reset.icon.image = "res/reset.png"
 panel.reset.icon.offset = { .25, .25, .25, .25 }
+
+-- add dice roll button
+panel.dice = panel:new(5, "PanelDiceButton", "resize")
+panel.dice.mouse = true
+panel.dice.offset = { 0, .1, 0, .6 }
+panel.dice:on("click", function()
+  popup:display("dice")
+end)
+
+panel.dice.icon = panel.dice:new(6, "PanelDiceButtonIcon", "image", "resize")
+panel.dice.icon.image = "res/dice.png"
+panel.dice.icon.offset = { .25, .25, .25, .25 }
