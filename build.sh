@@ -6,53 +6,49 @@ export APP_NAME=MTGCounter
 export APP_ICON=res/logo.png
 
 export BUILD_ROOT=$(pwd)
-
-echo ":: Prepare Temporary Folders"
-mkdir -p ${BUILD_ROOT}/tmp/android
-
-echo ":: Clean & Build LOVE file"
-echo "  -> Clean"
-rm -rf ${BUILD_ROOT}/tmp/game*
-echo "  -> Build Love2D File"
-zip -9 -r ${BUILD_ROOT}/tmp/game.love . -x '*.git*' -x '*tmp/*'
-
-echo ":: Fetch & Setup Android SDK"
-cd ${BUILD_ROOT}/tmp/android
-echo "  -> Set Environment"
 export ANDROID_COMPILE_SDK="30"
 export ANDROID_BUILD_TOOLS="30.0.2"
-export ANDROID_CMDLINE_TOOLS="7583922_latest"
+export ANDROID_CMDLINE_TOOLS="8512546_latest"
 export ANDROID_HOME=$PWD/android-sdk-linux
 export ANDROID_SDK_ROOT="$PWD/android-sdk-linux/"
-#export JAVA_HOME=/usr/lib/jvm/default
 export PATH=$PATH:$PWD/android-sdk-linux/platform-tools/
 
+echo ":: Fetch & Setup Android SDK"
+mkdir -p ${BUILD_ROOT}/tmp/android
+cd ${BUILD_ROOT}/tmp/android
+
+# Fetch Android SDK
 if ! [ -d ${BUILD_ROOT}/tmp/android/android-sdk-linux ]; then
   wget -q --show-progress --output-document=android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}.zip
-  echo "  -> Extracting"
+  echo "  -> Fetch Android SDK"
   unzip -d android-sdk-linux android-sdk.zip > /dev/null
 fi
 
+# Enable Platforms in SDK
 if ! [ -d ${BUILD_ROOT}/tmp/android/android-sdk-linux/platforms ]; then
-  echo "  -> Platforms"
+  echo "  -> Enable Platforms in SDK"
   echo y | android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk-linux "platforms;android-${ANDROID_COMPILE_SDK}" > /dev/null
 fi
 
+# Enable Platform-Tools in SDK
 if ! [ -d ${BUILD_ROOT}/tmp/android/android-sdk-linux/platform-tools ]; then
-  echo "  -> Platform-Tools"
+  echo "  -> Enable Platform-Tools in SDK"
   echo y | android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk-linux "platform-tools" > /dev/null
 fi
 
+# Enable Build-Tools in SDK
 if ! [ -d ${BUILD_ROOT}/tmp/android/android-sdk-linux/build-tools ]; then
-  echo "  -> Build-Tools"
+  echo "  -> Enable Build-Tools in SDK"
   echo y | android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk-linux "build-tools;${ANDROID_BUILD_TOOLS}" > /dev/null
 fi
 
+# Enable Licenses in SDK
 if ! [ -f ${BUILD_ROOT}/tmp/android/android-sdk-linux/licenses/google-gdk-license ]; then
-  echo "  -> Licenses"
+  echo "  -> Enable Licenses in SDK"
   yes | android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk-linux --licenses > /dev/null
 fi
 
+# Fetch the Love2D Android repositories
 echo ":: Fetch Love2D Android"
 if ! [ -d ${BUILD_ROOT}/tmp/android/love-android ]; then
   echo "  -> Clone"
@@ -66,26 +62,42 @@ else
 fi
 
 echo ":: Build Love2D APK"
-cp ${BUILD_ROOT}/tmp/game.love app/src/main/assets
+echo "  -> Copy Assets"
+assets="${BUILD_ROOT}/tmp/android/love-android/app/src/embed/assets"
 
-# rename
-sed -i "s/applicationId 'org.love2d.android'/applicationId '$APP_ID'/" app/build.gradle
-sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/embed/AndroidManifest.xml
-sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/main/AndroidManifest.xml
+rm -rf $assets
+mkdir -p $assets
+
+cd ${BUILD_ROOT}
+cp -r `ls -A1p ${BUILD_ROOT} | grep -v "^.git/" | grep -v "^tmp/" | grep -v ".keystore"` $assets
+cd -
 
 # add logo
+echo "  -> Convert App Icon"
 convert $BUILD_ROOT/${APP_ICON} -resize 42x42 app/src/main/res/drawable-mdpi/love.png
 convert $BUILD_ROOT/${APP_ICON} -resize 72x72 app/src/main/res/drawable-hdpi/love.png
 convert $BUILD_ROOT/${APP_ICON} -resize 96x96 app/src/main/res/drawable-xhdpi/love.png
 convert $BUILD_ROOT/${APP_ICON} -resize 144x144 app/src/main/res/drawable-xxhdpi/love.png
 convert $BUILD_ROOT/${APP_ICON} -resize 192x192 app/src/main/res/drawable-xxxhdpi/love.png
 
-# perform build
-./gradlew assembleNormal
+# rename
+echo "  -> Rename Application"
+sed -i "s/applicationId 'org.love2d.android'/applicationId '$APP_ID'/" app/build.gradle
+sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/norecord/AndroidManifest.xml
+sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/normal/AndroidManifest.xml
+sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/main/AndroidManifest.xml
 
-# release
-#./gradlew assembleEmbedRelease
-#./gradlew bundleEmbedRelease
+
+# perform build
+echo "  -> Build Debug"
+./gradlew assembleEmbedNoRecordDebug
+./gradlew bundleEmbedNoRecordDebug
+
+echo "  -> Build Release"
+./gradlew assembleEmbedNoRecordRelease
+./gradlew bundleEmbedNoRecordRelease
 
 echo ":: Move Build Results"
-cp ${BUILD_ROOT}/tmp/android/love-android/app/build/outputs/apk/normal/debug/app-normal-debug.apk ${BUILD_ROOT}/tmp/$APP_ID-debug.apk
+rm -f ${BUILD_ROOT}/tmp/*.apk
+cp -f ${BUILD_ROOT}/tmp/android/love-android/app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ${BUILD_ROOT}/tmp/$APP_ID-debug.apk
+cp -f ${BUILD_ROOT}/tmp/android/love-android/app/build/outputs/apk/embedNoRecord/release/app-embed-noRecord-release-unsigned.apk ${BUILD_ROOT}/tmp/$APP_ID-unsigned.apk
