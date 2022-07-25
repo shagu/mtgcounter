@@ -3,6 +3,8 @@
 
 export APP_ID=org.shagu.mtgcounter
 export APP_NAME=MTGCounter
+export APP_VERSION_CODE=1
+export APP_VERSION_NAME="1.0"
 export APP_ICON=res/logo.png
 
 # prepare build directory
@@ -85,9 +87,9 @@ convert $BUILD_ROOT/${APP_ICON} -resize 192x192 app/src/main/res/drawable-xxxhdp
 
 # rename
 echo "  -> Rename Application"
-sed -i "s/applicationId 'org.love2d.android'/applicationId '$APP_ID'/" app/build.gradle
-sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/norecord/AndroidManifest.xml
-sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/normal/AndroidManifest.xml
+sed -i "s/applicationId.*/applicationId '$APP_ID'/" app/build.gradle
+sed -i "s/versionCode.*/versionCode $APP_VERSION_CODE/" app/build.gradle
+sed -i "s/versionName.*/versionName '$APP_VERSION_NAME'/" app/build.gradle
 sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/main/AndroidManifest.xml
 
 # perform build
