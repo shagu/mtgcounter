@@ -1,23 +1,26 @@
 #!/bin/bash -e
-# dependencies: jdk11-openjdk imagemagick
+# dependencies: jdk11-openjdk imagemagick rsync
 
 export APP_ID=org.shagu.mtgcounter
 export APP_NAME=MTGCounter
 export APP_ICON=res/logo.png
 
+# prepare build directory
 export BUILD_ROOT=$(pwd)
+mkdir -p ${BUILD_ROOT}/tmp/android
+cd ${BUILD_ROOT}/tmp/android
+
 export ANDROID_COMPILE_SDK="30"
 export ANDROID_BUILD_TOOLS="30.0.2"
 export ANDROID_CMDLINE_TOOLS="8512546_latest"
 export ANDROID_HOME=$PWD/android-sdk-linux
 export ANDROID_SDK_ROOT="$PWD/android-sdk-linux/"
+export ASSETS_DIR="${BUILD_ROOT}/tmp/android/love-android/app/src/embed/assets"
+export APKSIGNER="${BUILD_ROOT}/tmp/android/android-sdk-linux/build-tools/${ANDROID_BUILD_TOOLS}/apksigner"
 export PATH=$PATH:$PWD/android-sdk-linux/platform-tools/
 
-echo ":: Fetch & Setup Android SDK"
-mkdir -p ${BUILD_ROOT}/tmp/android
-cd ${BUILD_ROOT}/tmp/android
-
 # Fetch Android SDK
+echo ":: Fetch & Setup Android SDK"
 if ! [ -d ${BUILD_ROOT}/tmp/android/android-sdk-linux ]; then
   wget -q --show-progress --output-document=android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}.zip
   echo "  -> Fetch Android SDK"
@@ -63,14 +66,14 @@ fi
 
 echo ":: Build Love2D APK"
 echo "  -> Copy Assets"
-assets="${BUILD_ROOT}/tmp/android/love-android/app/src/embed/assets"
-
-rm -rf $assets
-mkdir -p $assets
-
-cd ${BUILD_ROOT}
-cp -r `ls -A1p ${BUILD_ROOT} | grep -v "^.git/" | grep -v "^tmp/" | grep -v ".keystore"` $assets
-cd -
+rm -rf ${ASSETS_DIR}
+rsync -a \
+  --exclude 'tmp' \
+  --exclude '.git*' \
+  --exclude '*.jks' \
+  --exclude '*.sh' \
+  ${BUILD_ROOT}/ \
+  ${ASSETS_DIR}
 
 # add logo
 echo "  -> Convert App Icon"
@@ -87,7 +90,6 @@ sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/
 sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/normal/AndroidManifest.xml
 sed -i "s/android:label=\"LÖVE for Android\"/android:label=\"$APP_NAME\"/" app/src/main/AndroidManifest.xml
 
-
 # perform build
 echo "  -> Build Debug"
 ./gradlew assembleEmbedNoRecordDebug
@@ -101,3 +103,11 @@ echo ":: Move Build Results"
 rm -f ${BUILD_ROOT}/tmp/*.apk
 cp -f ${BUILD_ROOT}/tmp/android/love-android/app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ${BUILD_ROOT}/tmp/$APP_ID-debug.apk
 cp -f ${BUILD_ROOT}/tmp/android/love-android/app/build/outputs/apk/embedNoRecord/release/app-embed-noRecord-release-unsigned.apk ${BUILD_ROOT}/tmp/$APP_ID-unsigned.apk
+
+# sign APK if keystore is found
+# keytool -genkey -v -keystore ${BUILD_ROOT}/keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias shagu
+if [ -f ${BUILD_ROOT}/keystore.jks ]; then
+  echo ":: Sign APK"
+  $APKSIGNER sign --ks ${BUILD_ROOT}/keystore.jks --out ${BUILD_ROOT}/tmp/${APP_ID}.apk ${BUILD_ROOT}/tmp/${APP_ID}-unsigned.apk
+  $APKSIGNER verify ${BUILD_ROOT}/tmp/${APP_ID}.apk
+fi
