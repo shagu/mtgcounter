@@ -20,9 +20,12 @@ local num2word = {
   "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
 }
 
--- register framestack to love update
 function love.load()
+  -- register framestack to love update
   framestack:init()
+
+  -- initialize random number generator
+  math.randomseed(os.time())
 end
 
 -- slowly fade back to given color
